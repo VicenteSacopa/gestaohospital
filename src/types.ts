@@ -1,4 +1,4 @@
-export type View = 'login' | 'dashboard' | 'patients' | 'doctors' | 'staff' | 'consultations' | 'reports' | 'prescriptions';
+export type View = 'login' | 'dashboard' | 'patients' | 'doctors' | 'staff' | 'consultations' | 'reports' | 'prescriptions' | 'inventory' | 'treasury' | 'activity' | 'users' | 'settings';
 
 export interface Patient {
   id: string;

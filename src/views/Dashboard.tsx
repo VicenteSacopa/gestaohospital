@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Users, 
   Calendar, 
@@ -8,7 +8,10 @@ import {
   Download,
   Plus,
   MoreVertical,
-  CheckCircle2
+  CheckCircle2,
+  Wallet,
+  Package,
+  AlertTriangle
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -20,6 +23,7 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { motion } from 'motion/react';
+import { api } from '../services/api';
 
 const data = [
   { name: 'JAN', value: 400 },
@@ -30,33 +34,30 @@ const data = [
   { name: 'JUN', value: 900 },
 ];
 
-const stats = [
-  { label: 'Total de Pacientes', value: '12.840', change: '+12%', icon: Users, color: 'blue' },
-  { label: 'Consultas do Dia', value: '156', change: '+5%', icon: Calendar, color: 'purple' },
-  { label: 'Médicos Ativos', value: '84', change: '+2%', icon: Stethoscope, color: 'orange' },
-  { label: 'Funcionários', value: '320', change: '-1%', icon: Users, color: 'emerald' },
-];
-
-const latestPatients = [
-  { name: 'Alice Johnson', time: '2h', type: 'Geral', initial: 'AJ', color: 'bg-blue-100 text-blue-600' },
-  { name: 'Robert Wilson', time: '5h', type: 'UTI', initial: 'RW', color: 'bg-slate-900 text-white' },
-  { name: 'Emma Davis', time: 'Ontem', type: 'Pediatria', initial: 'ED', color: 'bg-purple-100 text-purple-600' },
-  { name: 'Samuel Green', time: 'Ontem', type: 'Radiologia', initial: 'SG', color: 'bg-emerald-100 text-emerald-600' },
-];
-
-const appointments = [
-  { patient: 'Johnathan Blake', doctor: 'Dr. Sarah Smith', time: '24 Out, 09:30 AM', type: 'Retorno', status: 'Confirmado' },
-  { patient: 'Maria Garcia', doctor: 'Dr. Michael Chen', time: '24 Out, 10:15 AM', type: 'Check-up', status: 'Confirmado' },
-  { patient: 'David Miller', doctor: 'Dr. Sarah Smith', time: '24 Out, 11:00 AM', type: 'Geral', status: 'Confirmado' },
-];
-
 export default function Dashboard() {
+  const [stats, setStats] = useState<any>(null);
+  const [latestPatients, setLatestPatients] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<any[]>([]);
+
+  useEffect(() => {
+    api.stats.get().then(setStats);
+    api.patients.list().then(data => setLatestPatients(data.slice(-4).reverse()));
+    api.consultations.list().then(data => setAppointments(data.slice(0, 5)));
+  }, []);
+
+  const statCards = [
+    { label: 'Total de Pacientes', value: stats?.patients || '0', change: '+12%', icon: Users, color: 'blue' },
+    { label: 'Receita Hoje', value: (stats?.revenue || 0).toLocaleString('pt-AO', { style: 'currency', currency: 'AOA' }), change: '+24%', icon: Wallet, color: 'emerald' },
+    { label: 'Consultas Registadas', value: stats?.consultations || '0', change: '+5%', icon: Calendar, color: 'purple' },
+    { label: 'Stock Crítico', value: stats?.lowStock || '0', change: '-2%', icon: Package, color: 'rose' },
+  ];
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Painel de Controle</h1>
-          <p className="text-slate-500">Bem-vindo de volta! Veja o que está acontecendo hoje.</p>
+          <p className="text-slate-500">Bem-vindo ao HM Chibia. Monitoramento em tempo real.</p>
         </div>
         <div className="flex gap-3">
           <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
@@ -72,7 +73,7 @@ export default function Dashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, i) => (
+        {statCards.map((stat, i) => (
           <motion.div 
             key={stat.label}
             initial={{ opacity: 0, y: 20 }}
@@ -152,23 +153,18 @@ export default function Dashboard() {
           <h3 className="text-lg font-bold text-slate-900 mb-6">Últimos Pacientes Cadastrados</h3>
           <div className="space-y-6">
             {latestPatients.map((patient) => (
-              <div key={patient.name} className="flex items-center justify-between">
+              <div key={patient.id} className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${patient.color}`}>
-                    {patient.initial}
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm bg-blue-100 text-blue-600`}>
+                    {patient.name.charAt(0)}
                   </div>
                   <div>
                     <p className="text-sm font-bold text-slate-900">{patient.name}</p>
-                    <p className="text-xs text-slate-500">Cadastrado há {patient.time}</p>
+                    <p className="text-xs text-slate-500">{patient.email}</p>
                   </div>
                 </div>
-                <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
-                  patient.type === 'UTI' ? 'bg-rose-50 text-rose-600' : 
-                  patient.type === 'Pediatria' ? 'bg-purple-50 text-purple-600' :
-                  patient.type === 'Radiologia' ? 'bg-emerald-50 text-emerald-600' :
-                  'bg-blue-50 text-blue-600'
-                }`}>
-                  {patient.type}
+                <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-600`}>
+                  {patient.bloodType}
                 </span>
               </div>
             ))}
@@ -199,13 +195,13 @@ export default function Dashboard() {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {appointments.map((apt) => (
-                <tr key={apt.patient} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-8 py-4 text-sm font-bold text-slate-900">{apt.patient}</td>
-                  <td className="px-8 py-4 text-sm text-slate-600">{apt.doctor}</td>
-                  <td className="px-8 py-4 text-sm text-slate-600">{apt.time}</td>
+                <tr key={apt.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <td className="px-8 py-4 text-sm font-bold text-slate-900">{apt.patientName}</td>
+                  <td className="px-8 py-4 text-sm text-slate-600">{apt.doctorName}</td>
+                  <td className="px-8 py-4 text-sm text-slate-600">{apt.date} {apt.time}</td>
                   <td className="px-8 py-4">
                     <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-medium">
-                      {apt.type}
+                      Consulta
                     </span>
                   </td>
                   <td className="px-8 py-4">

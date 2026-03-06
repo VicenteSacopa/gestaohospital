@@ -10,6 +10,9 @@ import Staff from './views/Staff';
 import Consultations from './views/Consultations';
 import Reports from './views/Reports';
 import Prescriptions from './views/Prescriptions';
+import Inventory from './views/Inventory';
+import Treasury from './views/Treasury';
+import ActivityView from './views/Activity';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
@@ -35,6 +38,11 @@ export default function App() {
       case 'consultations': return <Consultations />;
       case 'reports': return <Reports />;
       case 'prescriptions': return <Prescriptions />;
+      case 'inventory': return <Inventory />;
+      case 'treasury': return <Treasury />;
+      case 'activity': return <ActivityView />;
+      case 'users': return <div className="p-8"><h1 className="text-2xl font-bold">Gestão de Utilizadores</h1><p className="text-slate-500">Funcionalidade em desenvolvimento</p></div>;
+      case 'settings': return <div className="p-8"><h1 className="text-2xl font-bold">Configurações</h1><p className="text-slate-500">Funcionalidade em desenvolvimento</p></div>;
       default: return <Dashboard />;
     }
   };

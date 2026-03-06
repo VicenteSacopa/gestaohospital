@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Printer, 
   Plus, 
@@ -11,8 +11,18 @@ import {
   Grid
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { api } from '../services/api';
 
 export default function Prescriptions() {
+  const [patients, setPatients] = useState<any[]>([]);
+  const [selectedPatientId, setSelectedPatientId] = useState('');
+
+  useEffect(() => {
+    api.patients.list().then(setPatients);
+  }, []);
+
+  const selectedPatient = patients.find(p => p.id.toString() === selectedPatientId);
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -76,8 +86,15 @@ export default function Prescriptions() {
                 <label className="text-sm font-semibold text-slate-700">Paciente</label>
                 <div className="relative">
                   <User className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <select className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-900 outline-none focus:ring-2 focus:ring-blue-100 appearance-none">
-                    <option>Johnathan Doe (P-99283)</option>
+                  <select 
+                    value={selectedPatientId}
+                    onChange={(e) => setSelectedPatientId(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-900 outline-none focus:ring-2 focus:ring-blue-100 appearance-none"
+                  >
+                    <option value="">Selecionar Paciente</option>
+                    {patients.map(p => (
+                      <option key={p.id} value={p.id}>{p.name} ({p.id})</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -193,39 +210,41 @@ export default function Prescriptions() {
           {/* Patient Summary Card */}
           <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
             <h3 className="text-lg font-bold text-slate-900 mb-6">Resumo do Paciente</h3>
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-16 h-16 rounded-2xl bg-orange-100 flex items-center justify-center overflow-hidden">
-                <img 
-                  src="https://picsum.photos/seed/patient1/200/200" 
-                  alt="Patient" 
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-              <div>
-                <p className="text-lg font-bold text-slate-900">Johnathan Doe</p>
-                <p className="text-sm text-slate-500">Masculino, 34 Anos</p>
-              </div>
-            </div>
+            {selectedPatient ? (
+              <>
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-16 h-16 rounded-2xl bg-orange-100 flex items-center justify-center overflow-hidden">
+                    <div className="w-full h-full bg-hospital-blue text-white flex items-center justify-center text-xl font-bold">
+                      {selectedPatient.name.charAt(0)}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-slate-900">{selectedPatient.name}</p>
+                    <p className="text-sm text-slate-500">{selectedPatient.gender}, {selectedPatient.age} Anos</p>
+                  </div>
+                </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-8">
-              <div className="bg-slate-50 p-4 rounded-xl">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tipo Sanguíneo</p>
-                <p className="text-lg font-bold text-slate-900">A+</p>
-              </div>
-              <div className="bg-slate-50 p-4 rounded-xl">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Peso</p>
-                <p className="text-lg font-bold text-slate-900">78.5 kg</p>
-              </div>
-            </div>
+                <div className="grid grid-cols-2 gap-4 mb-8">
+                  <div className="bg-slate-50 p-4 rounded-xl">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tipo Sanguíneo</p>
+                    <p className="text-lg font-bold text-slate-900">{selectedPatient.bloodType || 'N/A'}</p>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-xl">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Peso</p>
+                    <p className="text-lg font-bold text-slate-900">-- kg</p>
+                  </div>
+                </div>
 
-            <div className="space-y-4 mb-8">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Alergias Conhecidas</p>
-              <div className="flex flex-wrap gap-2">
-                <span className="px-3 py-1 bg-rose-50 text-rose-600 rounded-lg text-xs font-bold">Penicilina</span>
-                <span className="px-3 py-1 bg-rose-50 text-rose-600 rounded-lg text-xs font-bold">Amendoim</span>
-              </div>
-            </div>
+                <div className="space-y-4 mb-8">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Alergias Conhecidas</p>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-3 py-1 bg-rose-50 text-rose-600 rounded-lg text-xs font-bold">Nenhuma registada</span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-slate-500 mb-8 italic">Selecione um paciente para ver o resumo.</p>
+            )}
 
             <button className="w-full py-3 bg-blue-50 text-hospital-blue rounded-xl text-sm font-bold hover:bg-blue-100 transition-colors">
               Ver Histórico Completo
@@ -245,9 +264,6 @@ export default function Prescriptions() {
                 <p className="text-lg font-bold text-slate-900">3</p>
               </div>
             </div>
-            <p className="mt-8 text-xs text-slate-400 italic">
-              Última receita gerada para "Jane Smith" há 14 min.
-            </p>
           </div>
 
           {/* Digital Signature */}

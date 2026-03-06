@@ -1,10 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Plus, 
   Search, 
   Download, 
   Filter, 
-  MoreVertical, 
   Edit2, 
   Trash2, 
   Eye,
@@ -12,15 +11,42 @@ import {
   UserPlus
 } from 'lucide-react';
 import { motion } from 'motion/react';
-
-const doctors = [
-  { id: 'MD-4502', name: 'Dr. Michael Chen', specialty: 'Cardiologia', phone: '+55 (11) 9022-1143', email: 'm.chen@hospital.com', initial: 'MC' },
-  { id: 'MD-4518', name: 'Dra. Elena Rodriguez', specialty: 'Pediatria', phone: '+55 (11) 2344-5588', email: 'e.rodriguez@hospital.com', initial: 'ER' },
-  { id: 'MD-4522', name: 'Dr. James Wilson', specialty: 'Neurologia', phone: '+55 (11) 7777-1212', email: 'j.wilson@hospital.com', initial: 'JW' },
-  { id: 'MD-4531', name: 'Dra. Sarah Thompson', specialty: 'Ortopedia', phone: '+55 (11) 4444-9900', email: 's.thompson@hospital.com', initial: 'ST' },
-];
+import { api } from '../services/api';
 
 export default function Doctors() {
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [formData, setFormData] = useState({
+    name: '',
+    specialty: '',
+    license: '',
+    phone: '',
+    email: '',
+    hours: ''
+  });
+
+  const fetchDoctors = () => {
+    api.doctors.list().then(setDoctors);
+  };
+
+  useEffect(() => {
+    fetchDoctors();
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    api.doctors.create(formData).then(() => {
+      fetchDoctors();
+      setFormData({
+        name: '',
+        specialty: '',
+        license: '',
+        phone: '',
+        email: '',
+        hours: ''
+      });
+    });
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -53,38 +79,79 @@ export default function Doctors() {
           <h2 className="text-lg font-bold text-slate-900">Cadastrar Médico</h2>
         </div>
 
-        <form className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-2">
             <label className="text-sm font-semibold text-slate-700">NOME COMPLETO</label>
-            <input type="text" placeholder="Dr. Sarah Johnson" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-blue-100" />
+            <input 
+              type="text" 
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              placeholder="Dr. Sarah Johnson" 
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-blue-100" 
+            />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-semibold text-slate-700">ESPECIALIDADE</label>
-            <select className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-blue-100">
-              <option>Cardiologia</option>
-              <option>Pediatria</option>
-              <option>Neurologia</option>
-            </select>
+            <input 
+              type="text" 
+              required
+              value={formData.specialty}
+              onChange={(e) => setFormData({...formData, specialty: e.target.value})}
+              placeholder="Ex: Cardiologia" 
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-blue-100" 
+            />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-semibold text-slate-700">NÚMERO DA ORDEM MÉDICA</label>
-            <input type="text" placeholder="OM-9988-ABC" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-blue-100" />
+            <input 
+              type="text" 
+              required
+              value={formData.license}
+              onChange={(e) => setFormData({...formData, license: e.target.value})}
+              placeholder="OM-9988-ABC" 
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-blue-100" 
+            />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-semibold text-slate-700">TELEFONE</label>
-            <input type="text" placeholder="+55 (11) 98888-7777" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-blue-100" />
+            <input 
+              type="text" 
+              value={formData.phone}
+              onChange={(e) => setFormData({...formData, phone: e.target.value})}
+              placeholder="+244 900 000 000" 
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-blue-100" 
+            />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-semibold text-slate-700">EMAIL</label>
-            <input type="email" placeholder="s.johnson@hospital.com" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-blue-100" />
+            <input 
+              type="email" 
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              placeholder="medico@hospital.pt" 
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-blue-100" 
+            />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-semibold text-slate-700">HORÁRIO DE ATENDIMENTO</label>
-            <input type="text" placeholder="Seg-Sex, 09:00 - 17:00" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-blue-100" />
+            <input 
+              type="text" 
+              value={formData.hours}
+              onChange={(e) => setFormData({...formData, hours: e.target.value})}
+              placeholder="08:00 - 16:00" 
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-blue-100" 
+            />
           </div>
           <div className="md:col-span-3 flex justify-end gap-4 pt-4">
-            <button type="button" className="px-8 py-3 text-sm font-bold text-slate-500 hover:text-slate-700">Descartar</button>
-            <button type="submit" className="px-8 py-3 bg-hospital-blue text-white rounded-xl font-bold hover:bg-blue-600 shadow-lg shadow-blue-500/20">Concluir Cadastro</button>
+            <button 
+              type="button" 
+              onClick={() => setFormData({ name: '', specialty: '', license: '', phone: '', email: '', hours: '' })}
+              className="px-8 py-3 text-sm font-bold text-slate-500 hover:text-slate-700"
+            >
+              Limpar
+            </button>
+            <button type="submit" className="px-8 py-3 bg-hospital-blue text-white rounded-xl font-bold hover:bg-blue-600 shadow-lg shadow-blue-500/20">Registar Médico</button>
           </div>
         </form>
       </motion.div>
@@ -111,28 +178,24 @@ export default function Doctors() {
                 <tr key={d.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-8 py-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden border border-slate-200">
-                        <img 
-                          src={`https://picsum.photos/seed/${d.id}/100/100`} 
-                          alt={d.name} 
-                          className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
-                        />
+                      <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200">
+                        <Stethoscope className="w-5 h-5" />
                       </div>
                       <div>
                         <p className="text-sm font-bold text-slate-900">{d.name}</p>
-                        <p className="text-[10px] font-bold text-hospital-blue uppercase tracking-wider">ID: {d.id}</p>
+                        <p className="text-[10px] font-bold text-hospital-blue uppercase tracking-widest">{d.license}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-8 py-4 text-sm text-slate-600">{d.specialty}</td>
-                  <td className="px-8 py-4 text-sm text-slate-600">{d.phone}</td>
+                  <td className="px-8 py-4">
+                    <span className="px-3 py-1 bg-blue-50 text-hospital-blue rounded-lg text-xs font-bold">
+                      {d.specialty}
+                    </span>
+                  </td>
+                  <td className="px-8 py-4 text-sm text-slate-600 font-medium">{d.phone}</td>
                   <td className="px-8 py-4 text-sm text-slate-600">{d.email}</td>
                   <td className="px-8 py-4 text-right">
                     <div className="flex justify-end gap-2">
-                      <button className="p-2 text-slate-400 hover:text-hospital-blue transition-colors">
-                        <Edit2 className="w-4 h-4" />
-                      </button>
                       <button className="p-2 text-slate-400 hover:text-hospital-blue transition-colors">
                         <Eye className="w-4 h-4" />
                       </button>
