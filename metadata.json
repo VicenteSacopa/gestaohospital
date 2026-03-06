@@ -1,0 +1,5 @@
+{
+  "name": "Hospital Municipal da Chibia",
+  "description": "Sistema de Gestão Administrativa para o Hospital Municipal da Chibia. Gestão de pacientes, médicos, consultas e relatórios.",
+  "requestFramePermissions": []
+}
