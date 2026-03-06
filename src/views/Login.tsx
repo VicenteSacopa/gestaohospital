@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   ShieldCheck, 
   Lock, 
-  Mail, 
+  UserCircle, 
   Eye, 
   EyeOff, 
   ArrowRight,
@@ -10,18 +10,35 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
+import { api } from '../services/api';
+
 interface LoginProps {
-  onLogin: () => void;
+  onLogin: (user: any) => void;
 }
 
 export default function Login({ onLogin }: LoginProps) {
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin();
+    setError('');
+    setLoading(true);
+    try {
+      const user = await api.users.login(username, password);
+      if (user.error) {
+        setError(user.error);
+      } else {
+        onLogin(user);
+      }
+    } catch (err) {
+      setError('Erro ao conectar ao servidor.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -76,16 +93,27 @@ export default function Login({ onLogin }: LoginProps) {
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center gap-3 text-rose-600 text-sm font-medium"
+                >
+                  <Lock className="w-4 h-4" />
+                  {error}
+                </motion.div>
+              )}
+
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">Email</label>
+                <label className="text-sm font-semibold text-slate-700">Utilizador</label>
                 <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-hospital-blue transition-colors" />
+                  <UserCircle className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-hospital-blue transition-colors" />
                   <input 
-                    type="email" 
+                    type="text" 
                     required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="exemplo@hospital.pt"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="admin"
                     className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 pl-12 pr-4 text-slate-900 outline-none focus:ring-2 focus:ring-blue-100 focus:border-hospital-blue transition-all"
                   />
                 </div>
@@ -129,9 +157,10 @@ export default function Login({ onLogin }: LoginProps) {
 
               <button 
                 type="submit"
-                className="w-full bg-hospital-blue text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-600 transition-all flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20 active:scale-[0.98]"
+                disabled={loading}
+                className="w-full bg-hospital-blue text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-600 transition-all flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Entrar
+                {loading ? 'A entrar...' : 'Entrar'}
                 <ArrowRight className="w-5 h-5" />
               </button>
             </form>

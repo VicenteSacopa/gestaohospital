@@ -13,23 +13,46 @@ import Prescriptions from './views/Prescriptions';
 import Inventory from './views/Inventory';
 import Treasury from './views/Treasury';
 import ActivityView from './views/Activity';
+import UsersView from './views/Users';
 import { motion, AnimatePresence } from 'motion/react';
+import { Lock } from 'lucide-react';
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const [currentView, setCurrentView] = useState<View>('dashboard');
 
-  const handleLogin = () => setIsLoggedIn(true);
+  const handleLogin = (userData: any) => setUser(userData);
   const handleLogout = () => {
-    setIsLoggedIn(false);
+    setUser(null);
     setCurrentView('dashboard');
   };
 
-  if (!isLoggedIn) {
+  if (!user) {
     return <Login onLogin={handleLogin} />;
   }
 
   const renderView = () => {
+    // Permission guard
+    if (!user.permissions.includes(currentView) && currentView !== 'dashboard') {
+      return (
+        <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+          <div className="bg-rose-50 p-4 rounded-full mb-4">
+            <Lock className="w-8 h-8 text-rose-500" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900">Acesso Restrito</h2>
+          <p className="text-slate-500 max-w-xs mx-auto mt-2">
+            Não tem permissão para aceder a esta área. Contacte o administrador do sistema.
+          </p>
+          <button 
+            onClick={() => setCurrentView('dashboard')}
+            className="mt-6 px-6 py-2 bg-hospital-blue text-white rounded-xl font-bold text-sm"
+          >
+            Voltar ao Dashboard
+          </button>
+        </div>
+      );
+    }
+
     switch (currentView) {
       case 'dashboard': return <Dashboard />;
       case 'patients': return <Patients />;
@@ -41,7 +64,7 @@ export default function App() {
       case 'inventory': return <Inventory />;
       case 'treasury': return <Treasury />;
       case 'activity': return <ActivityView />;
-      case 'users': return <div className="p-8"><h1 className="text-2xl font-bold">Gestão de Utilizadores</h1><p className="text-slate-500">Funcionalidade em desenvolvimento</p></div>;
+      case 'users': return <UsersView />;
       case 'settings': return <div className="p-8"><h1 className="text-2xl font-bold">Configurações</h1><p className="text-slate-500">Funcionalidade em desenvolvimento</p></div>;
       default: return <Dashboard />;
     }
@@ -52,12 +75,14 @@ export default function App() {
       <Sidebar 
         currentView={currentView} 
         onViewChange={setCurrentView} 
+        permissions={user.permissions}
+        onLogout={handleLogout}
       />
       
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar 
-          userName="Dra. Sarah Smith" 
-          userRole="Administradora" 
+          userName={user.name} 
+          userRole={user.role} 
           onLogout={handleLogout} 
         />
         

@@ -30,9 +30,11 @@ function cn(...inputs: ClassValue[]) {
 interface SidebarProps {
   currentView: View;
   onViewChange: (view: View) => void;
+  permissions: string[];
+  onLogout: () => void;
 }
 
-export default function Sidebar({ currentView, onViewChange }: SidebarProps) {
+export default function Sidebar({ currentView, onViewChange, permissions, onLogout }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const menuGroups = [
@@ -107,67 +109,79 @@ export default function Sidebar({ currentView, onViewChange }: SidebarProps) {
       </div>
 
       <nav className="flex-1 px-4 py-4 space-y-8 overflow-y-auto custom-scrollbar">
-        {menuGroups.map((group) => (
-          <div key={group.title} className="space-y-2">
-            {!isCollapsed && (
-              <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                {group.title}
-              </p>
-            )}
-            <div className="space-y-1">
-              {group.items.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => onViewChange(item.id as View)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group",
-                    currentView === item.id 
-                      ? "bg-hospital-blue text-white shadow-lg shadow-blue-500/20" 
-                      : "hover:bg-slate-800 hover:text-white"
-                  )}
-                >
-                  <item.icon className={cn(
-                    "w-5 h-5 shrink-0",
-                    currentView === item.id ? "text-white" : "text-slate-500 group-hover:text-white"
-                  )} />
-                  {!isCollapsed && (
-                    <span className="text-sm font-medium truncate">{item.label}</span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
+        {menuGroups.map((group) => {
+          const visibleItems = group.items.filter(item => permissions.includes(item.id));
+          if (visibleItems.length === 0) return null;
 
-        <div className="space-y-2">
-          {!isCollapsed && (
-            <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-              Sistema
-            </p>
-          )}
-          <div className="space-y-1">
-            {secondaryItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => onViewChange(item.id as View)}
-                className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group",
-                  currentView === item.id 
-                    ? "bg-hospital-blue text-white shadow-lg shadow-blue-500/20" 
-                    : "hover:bg-slate-800 hover:text-white"
-                )}
-              >
-                <item.icon className={cn(
-                  "w-5 h-5 shrink-0",
-                  currentView === item.id ? "text-white" : "text-slate-500 group-hover:text-white"
-                )} />
-                {!isCollapsed && (
-                  <span className="text-sm font-medium truncate">{item.label}</span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
+          return (
+            <div key={group.title} className="space-y-2">
+              {!isCollapsed && (
+                <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  {group.title}
+                </p>
+              )}
+              <div className="space-y-1">
+                {visibleItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => onViewChange(item.id as View)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group",
+                      currentView === item.id 
+                        ? "bg-hospital-blue text-white shadow-lg shadow-blue-500/20" 
+                        : "hover:bg-slate-800 hover:text-white"
+                    )}
+                  >
+                    <item.icon className={cn(
+                      "w-5 h-5 shrink-0",
+                      currentView === item.id ? "text-white" : "text-slate-500 group-hover:text-white"
+                    )} />
+                    {!isCollapsed && (
+                      <span className="text-sm font-medium truncate">{item.label}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+
+        {(() => {
+          const visibleSecondary = secondaryItems.filter(item => permissions.includes(item.id));
+          if (visibleSecondary.length === 0) return null;
+
+          return (
+            <div className="space-y-2">
+              {!isCollapsed && (
+                <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  Sistema
+                </p>
+              )}
+              <div className="space-y-1">
+                {visibleSecondary.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => onViewChange(item.id as View)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group",
+                      currentView === item.id 
+                        ? "bg-hospital-blue text-white shadow-lg shadow-blue-500/20" 
+                        : "hover:bg-slate-800 hover:text-white"
+                    )}
+                  >
+                    <item.icon className={cn(
+                      "w-5 h-5 shrink-0",
+                      currentView === item.id ? "text-white" : "text-slate-500 group-hover:text-white"
+                    )} />
+                    {!isCollapsed && (
+                      <span className="text-sm font-medium truncate">{item.label}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </nav>
 
       <div className="p-4 border-t border-slate-800">
@@ -181,7 +195,10 @@ export default function Sidebar({ currentView, onViewChange }: SidebarProps) {
             </button>
           </div>
         )}
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-rose-500/10 hover:text-rose-500 transition-all group">
+        <button 
+          onClick={onLogout}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-rose-500/10 hover:text-rose-500 transition-all group"
+        >
           <LogOut className="w-5 h-5 shrink-0 group-hover:text-rose-500" />
           {!isCollapsed && <span className="text-sm font-medium">Sair</span>}
         </button>

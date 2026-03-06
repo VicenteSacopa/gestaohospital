@@ -93,6 +93,17 @@ db.exec(`
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    name TEXT,
+    role TEXT, -- Administrador, Médico, Enfermeiro, Recepcionista
+    permissions TEXT, -- JSON string of allowed views
+    status TEXT DEFAULT 'Activo',
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE TABLE IF NOT EXISTS activity_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     action TEXT NOT NULL,
@@ -124,6 +135,13 @@ if (patientCount.count === 0) {
 
   const insertTask = db.prepare("INSERT INTO tasks (userId, title, description, priority, dueDate) VALUES (?, ?, ?, ?, ?)");
   insertTask.run(1, "Revisão de Stock", "Verificar validade dos medicamentos na farmácia central", "Alta", "2024-03-10");
+}
+
+const userCount = db.prepare("SELECT count(*) as count FROM users").get() as { count: number };
+if (userCount.count === 0) {
+  const insertUser = db.prepare("INSERT INTO users (username, password, name, role, permissions) VALUES (?, ?, ?, ?, ?)");
+  insertUser.run("admin", "admin123", "Administrador Geral", "Administrador", JSON.stringify(['dashboard', 'patients', 'consultations', 'doctors', 'prescriptions', 'staff', 'inventory', 'treasury', 'reports', 'activity', 'users', 'settings']));
+  insertUser.run("medico", "medico123", "Dr. Manuel dos Santos", "Médico", JSON.stringify(['dashboard', 'patients', 'consultations', 'prescriptions', 'activity']));
 }
 
 async function startServer() {
@@ -246,6 +264,46 @@ async function startServer() {
   app.get("/api/activity-logs", (req, res) => {
     const logs = db.prepare("SELECT * FROM activity_logs ORDER BY id DESC").all();
     res.json(logs);
+  });
+
+  app.post("/api/login", (req, res) => {
+    const { username, password } = req.body;
+    const user = db.prepare("SELECT id, username, name, role, permissions, status FROM users WHERE username = ? AND password = ?").get(username, password) as any;
+    
+    if (user) {
+      if (user.status !== 'Activo') {
+        return res.status(403).json({ error: "Conta inactiva. Contacte o administrador." });
+      }
+      const permissions = JSON.parse(user.permissions || '[]');
+      res.json({ ...user, permissions });
+      addLog("Login", `Utilizador ${username} acedeu ao sistema.`);
+    } else {
+      res.status(401).json({ error: "Credenciais inválidas." });
+    }
+  });
+
+  app.get("/api/users", (req, res) => {
+    const users = db.prepare("SELECT id, username, name, role, permissions, status, createdAt FROM users").all();
+    res.json(users.map((u: any) => ({ ...u, permissions: JSON.parse(u.permissions || '[]') })));
+  });
+
+  app.post("/api/users", (req, res) => {
+    const { username, password, name, role, permissions } = req.body;
+    try {
+      const info = db.prepare("INSERT INTO users (username, password, name, role, permissions) VALUES (?, ?, ?, ?, ?)").run(username, password, name, role, JSON.stringify(permissions));
+      addLog("Utilizador Criado", `Novo utilizador ${username} (${role}) adicionado.`);
+      res.json({ id: info.lastInsertRowid });
+    } catch (e: any) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  app.put("/api/users/:id", (req, res) => {
+    const { id } = req.params;
+    const { name, role, permissions, status } = req.body;
+    db.prepare("UPDATE users SET name = ?, role = ?, permissions = ?, status = ? WHERE id = ?").run(name, role, JSON.stringify(permissions), status, id);
+    addLog("Utilizador Actualizado", `Dados do utilizador ID ${id} foram modificados.`);
+    res.json({ success: true });
   });
 
   // Vite middleware for development

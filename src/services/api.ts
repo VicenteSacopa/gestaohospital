@@ -55,6 +55,24 @@ export const api = {
   tasks: {
     list: () => fetch(`${API_BASE}/tasks`).then(r => r.json()),
   },
+  users: {
+    list: () => fetch(`${API_BASE}/users`).then(r => r.json()),
+    login: (username: string, password: string) => fetch(`${API_BASE}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    }).then(r => r.json()),
+    create: (data: any) => fetch(`${API_BASE}/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(r => r.json()),
+    update: (id: number, data: any) => fetch(`${API_BASE}/users/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(r => r.json()),
+  },
   activityLogs: {
     list: () => fetch(`${API_BASE}/activity-logs`).then(r => r.json()),
   }
